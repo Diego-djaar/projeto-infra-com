@@ -14,3 +14,5 @@ Este projeto foi desenvolvido por alunos de Ciência da Computação do CIn-UFPE
 
 A primeira parte do projeto consiste em fazer uma comunicação cliente-servidor entre dois hosts utilizando o protocolo de transporte UDP. 
 Inicialmente, o cliente envia um arquivo (dividido em pacotes de 1KB) ao servidor, que deve salvá-lo e renomeá-lo. Depois disso, o servidor o reenvia ao cliente, que salva a nova cópia com outro nome.
+
+O cliente é o programa client1.py e o servidor é o programa server1.py Ambos utilizam as funções definidas em file.py
