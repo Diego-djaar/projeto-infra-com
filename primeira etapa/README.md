@@ -9,7 +9,8 @@ Este projeto foi desenvolvido por alunos de Ciência da Computação do CIn-UFPE
 - João Vitor Lima Mergulhão (jvlm2)
 - João Vítor Cavalcanti Régis (jvcr)
 - Rebeca de Azevedo Menezes (ram3)
-
+- João Victor Ribeiro Costa de Omena (jvrco)
+- Pedro Vitor de Oliveira Monte (pvom)
 ## Parte 1
 
 A primeira parte do projeto consiste em fazer uma comunicação cliente-servidor entre dois hosts utilizando o protocolo de transporte UDP. 
