@@ -4,7 +4,7 @@ import math
 from time import sleep
 
 # envia arquivo
-def Sendfile(filePath: str, clientSocket: socket, serverAddr: tuple[str, int], buffer_size: int):
+def Sendfile(filePath: str, clientSocket: socket, serverAddr: tuple[str, int], buffer_size: int, seq_num: str):
     with open(filePath, 'rb') as file: # arquivo binário em modo de leitura
         # Enviando nome do arquivo
         filePath_list = filePath.split('\\') # o caminho do arquivo é separado em uma lista usando como delimitador '\' -> pensadno em windows
@@ -16,6 +16,8 @@ def Sendfile(filePath: str, clientSocket: socket, serverAddr: tuple[str, int], b
         clientSocket.sendto(str(n_pacotes).encode(), serverAddr)
 
         data = file.read(buffer_size)
+
+        clientSocket.sendto(seq_num.encode(), serverAddr) # Enviando sequence number
 
         # Enviando conteúdo do arquivo pacote a pacote (cada um tem buffer_size bytes)
         for i in range(0, n_pacotes):
@@ -34,6 +36,8 @@ def Receivefile(serverSocket: socket, buffer_size: int) -> tuple[str, any]:
     data, clientAddr = serverSocket.recvfrom(buffer_size) # clientAddr é tupla que especifica o IP e a porta de destino do host que está enviando
     n_pacotes = int(data.decode()) # decodifica a mensagem
 
+    seq_number = serverSocket.recvfrom(buffer_size).decode()
+
     # cria novo arquivo e escreve o conteúdo
     with open(filePath, 'wb') as file: # arquivo binário em modo de escrita
         print(filePath)
@@ -47,4 +51,4 @@ def Receivefile(serverSocket: socket, buffer_size: int) -> tuple[str, any]:
             serverSocket.close()
             print('Timeout')
 
-    return (filePath, clientAddr)
+    return (filePath, clientAddr, seq_number)
