@@ -17,6 +17,7 @@ class RDT():
                 chksum += number_16_bits
             else:
                 chksum += byte_array[i] << 8
+            chksum = ~chksum
         return chksum
 
     def is_corrupted(self, data: str):
@@ -26,7 +27,7 @@ class RDT():
         return True
 
     def make_pkt(self, seqnum: int, data: str):
-        pkt = str(int) + str(self.checksum(data)) + data #dois primeiros bytes  do pacote correspondem ao checksum
+        pkt = str(int) + str(self.checksum(data)) + data # dois primeiros bytes  do pacote correspondem ao checksum
         return pkt
 
     def wait_for_ack(self, ack_num: int, string: str, clientSocket: socket, serverAddr: tuple[str, int], buffer_size: int):
@@ -37,7 +38,7 @@ class RDT():
                 data, clientAdress = clientSocket.recvfrom(buffer_size)
                 # Verificação se o ACK corresponde à última msg enviada
                 if (data[0] == ack_num and clientAdress == serverAddr 
-                    and self.is_corrupted(data[1:])):
+                    and not self.is_corrupted(data[1:])):
                     clientSocket.settimeout(None)
                     # Troca valor de ACK de 0 pra 1 ou de 1 pra 0
                     ack_num = abs(ack_num - 1)
