@@ -45,7 +45,7 @@ while True:
                     time = time.strftime(' %H:%M %d/%m/%Y')
                     clientIP, clientPort = clientAddr
                     clientPort = str(clientPort)
-                    msg = clientIP + ':' + clientPort + '~' + user_name + msg + time
+                    msg = clientIP + ':' + clientPort + '/~' + user_name + msg + ' ' +time
 
         if broadcast:
             for clientAddr,user_name in users_dict.items(): #broadcast
