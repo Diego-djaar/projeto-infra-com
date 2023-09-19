@@ -28,8 +28,9 @@ while True:
                 print(msg)
                 broadcast = True
         else:
-            user_name = users_dict.pop(clientAddr, False)
-            if user_name:
+            # identifica se pacote vem de um usuário cadastrado
+            user_name = users_dict.pop(clientAddr, False) 
+            if user_name: # lista de ações
                 if data[:4] == "bye":
                     user_name = users_dict.pop(clientAddr, False)
                     users_list.remove(user_name)
@@ -40,12 +41,14 @@ while True:
                 elif data[:4] == "list":
                     serverSocket.sendto(str(users_list).encode(), clientAddr) # envia pacotes
                     broadcast = False
-                else:
+                else: 
+                    # se não tiver um comando específico interpreta como mensagem comum
                     time = datetime.now()
                     time = time.strftime(' %H:%M %d/%m/%Y')
                     clientIP, clientPort = clientAddr
                     clientPort = str(clientPort)
                     msg = clientIP + ':' + clientPort + '/~' + user_name + msg + ' ' +time
+                    broadcast = True
 
         if broadcast:
             for clientAddr,user_name in users_dict.items(): #broadcast
