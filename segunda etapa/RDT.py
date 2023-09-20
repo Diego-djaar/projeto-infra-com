@@ -1,6 +1,5 @@
 from socket import *
 from enum import Enum
-import asyncio
 import threading
 from typing import Any
 
@@ -32,19 +31,19 @@ class Pkt_buff():
         self.buff = []
         pass
 
-    async def bind(self, addr):
+    def bind(self, addr):
         with self.lock:
             self.sock.bind(addr)
 
-    async def settimeout(self, timeout):
+    def settimeout(self, timeout):
         with self.lock:
             self.sock.settimeout(timeout)
 
-    async def sendto(self, data, addr):
+    def sendto(self, data, addr):
         with self.lock:
             self.sock.sendto(data, addr)
 
-    async def recvfrom(self, is_ack: bool, retAddress0, retAddress1) -> tuple[str, Any]:
+    def recvfrom(self, is_ack: bool, retAddress0, retAddress1) -> tuple[str, Any]:
         if retAddress0 == None:
             retAddress = None
         else:
@@ -69,7 +68,7 @@ class Pkt_buff():
                     return pkt
                 else:
                     self.buff.append(pkt)
-            await asyncio.sleep(0.5)
+            await sleep(0.5)
 
 
 class RDT():
@@ -93,7 +92,7 @@ class RDT():
         pkt = str(seqnum) + str(acknum) + data  # + str(self.checksum(data))
         return pkt
 
-    async def wait_for_ack(self, string: str, serverAddr: tuple[str, int], buffer_size: int) -> bool:
+    def wait_for_ack(self, string: str, serverAddr: tuple[str, int], buffer_size: int) -> bool:
         if self.estado == RDT_Estados.Chamada_0 or self.estado == RDT_Estados.Chamada_1:
             raise Exception("ERRO: Esperando ack antes de enviar mensagem")
         while self.estado == RDT_Estados.Ack_0 or self.estado == RDT_Estados.Ack_1:
@@ -123,7 +122,7 @@ class RDT():
                     await self.clientSocket.settimeout(2)
                 return False
 
-    async def sendmsg(self, string: str, serverAddr: tuple[str, int], buffer_size: int):
+    def sendmsg(self, string: str, serverAddr: tuple[str, int], buffer_size: int):
         if self.estado == RDT_Estados.Ack_0 or self.estado == RDT_Estados.Ack_1:
             raise Exception("ERRO: Enviou mensagem antes de receber ack")
         with self.lock:
@@ -138,7 +137,7 @@ class RDT():
         else:
             self.estado = RDT_Estados.Ack_1
 
-    async def receivemsg(self, buffer_size: int):
+    def receivemsg(self, buffer_size: int):
         while True:
             # Tentar receber a mensagem
             await self.clientSocket.settimeout(None)
