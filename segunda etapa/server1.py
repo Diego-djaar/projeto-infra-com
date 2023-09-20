@@ -2,15 +2,17 @@ from socket import *
 import asyncio
 import os
 import math
-from RDT import *
+from RDTs import Pkt_buff, RDT
+import RDTs
 import threading
 
 
-async def connectclient(serverSocket: Pkt_buff, username: str, serverAddr: tuple[str, int], buffer_size: int) -> RDT:
-    await serverSocket.bind(serverAddr)  # configura o número da porta
-    objRDT = RDT(serverSocket)
-    mesg = await objRDT.receivemsg(buffer_size)
-    print(f"RECEIVED CONEXION {mesg[0]}")
+async def connectclient(serverSocket: Pkt_buff, serverAddr: tuple[str, int], buffer_size: int, first: bool = True, set_addr: None | str = None) -> RDT:
+    if (first):
+        await serverSocket.bind(serverAddr)  # configura o número da porta
+    objRDT = RDT(serverSocket, set_addr)
+    # mesg = await objRDT.receivemsg(buffer_size)
+    # print(f"RECEIVED CONEXION {mesg[0]}")
     return objRDT
 
 

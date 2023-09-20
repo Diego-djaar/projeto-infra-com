@@ -2,10 +2,13 @@ from socket import *
 from enum import Enum
 from file import Sendfile, Receivefile
 import asyncio
-import threading
-from RDT import *
+from threading import Thread
+from RDTs import *
 from client1 import *
 from server1 import *
+from concurrent.futures import ProcessPoolExecutor
+
+global pkt_buff
 
 
 async def main():
@@ -24,9 +27,10 @@ async def main():
 
     # Server pov
     pktBuff = Pkt_buff(buffer_size, serverSocket)
-    conexaoRDT = await connectclient(pktBuff, username, serverAddr, buffer_size)
-    while (True):
-        print(f"RECEIVED MESSAGE {(await conexaoRDT.receivemsg(buffer_size))[0]}")
+    t = threading.Thread(target=pktBuff.startloop, args=serverAddr, daemon=True)
+    t.start()
+
+    await asyncio.sleep(999999999999999999999999999999999)
 
 
 if __name__ == "__main__":
