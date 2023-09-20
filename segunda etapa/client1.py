@@ -7,14 +7,14 @@ import threading
 async def sendRDT(objRDT: RDT, serverAddr: tuple[str, int], buffer_size: int):
     print("Digite a sua mensagem:")
     mensagem = str(input())
-    await objRDT.sendmsg(f"{mensagem}", 0, serverAddr, buffer_size)
+    await sendmsg(objRDT, mensagem, 0, serverAddr, buffer_size)
 
 
 async def connectserver(objRDT: RDT, username: str, serverAddr: tuple[str, int], buffer_size: int):
     msg = f"hi, meu nome eh {username}"
     msg = objRDT.make_pkt(msg)
     await objRDT.sendmsg(msg, serverAddr, buffer_size)
-    print("conexion sent")
+    print("connection sent")
     while not (await objRDT.wait_for_ack(msg, serverAddr, buffer_size)):
         print("waiting ack")
         continue
@@ -27,6 +27,28 @@ async def sendmsg(objRDT: RDT, msg: str, serverAddr: tuple[str, int], buffer_siz
     while not await objRDT.wait_for_ack(msg, serverAddr, buffer_size):
         print("waiting ack")
         continue
+
+async def receiveRDT(RDT: RDT):
+    while True:
+        msg, clientAdress = RDT.receivemsg()
+        if msg[2:5] == "list": # Ajustar para formato padrão da msg dado envio de lista
+            is_list = True
+        processmsg(msg, is_list)
+        
+async def processmsg(msg: str, list: bool = False):
+    global message_list, user_list
+    if not list:
+        msg = msg[2:] # A partir de onde for de fato a string (Quando padronizado o formato da mensagem)
+        message_list.append(msg)
+        print(msg)
+    else:
+        msg = msg[6:] # A partir de onde tem os nomes dos usuários
+        user_list = msg.split("//") # Escolher forma de separação dos usuários da lista a partir de algum padrão
+        print("Segue a lista de usuários: ")
+        counter = 0
+        for i in user_list:
+            print(f"({counter}): {i}")
+            counter += 1
 
 
 async def main():
@@ -45,11 +67,11 @@ async def main():
     print("Para ter acesso à lista de usuários digite o comando list.")
 
     # Iniciar as threads de receber e enviar dados
+    receiveThread = threading.Thread(targed = receiveRDT(conexaoRDT), name = "Receive Thread")
+    receiveThread.start()
 
-    async def enviar_mensagens():
-        destinatario = str(input("Para qual usuário você deseja enviar?"))
-        mensagem = str(input("Digite sua mensagem: "))
-        conexaoRDT.sendmsg(mensagem,)
+    sendThread = threading.Thread(targed = sendRDT(conexaoRDT, serverAddr, buffer_size), name = "Send Thread")
+    sendThread.start()
 
 
 if __name__ == "__main__":
