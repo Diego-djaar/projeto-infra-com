@@ -3,11 +3,11 @@ from file import Sendfile, Receivefile
 from datetime import datetime
 
 # Definições e Inicializar servidor
-serverIP = gethostbyname(gethostname()) # adquirir IP do sevidor
-serverPort = 12000 # define número da porta
-serverSocket = socket(AF_INET, SOCK_DGRAM) # cria socket UDP para o servidor
-serverSocket.bind(('', serverPort)) # configura o número da porta
-buffer_size = 1024 # define a quantidade de bytes do buffer
+serverIP = gethostbyname(gethostname())  # adquirir IP do sevidor
+serverPort = 12000  # define número da porta
+serverSocket = socket(AF_INET, SOCK_DGRAM)  # cria socket UDP para o servidor
+serverSocket.bind(('', serverPort))  # configura o número da porta
+buffer_size = 1024  # define a quantidade de bytes do buffer
 print('O servidor está pronto para receber')
 print('O IP do servidor é', serverIP)
 
@@ -15,47 +15,57 @@ users_dict = {}
 users_list = []
 
 while True:
-    pkt_rcv = serverSocket.recvfrom(buffer_size) # recebe pacotes
+    broadcast = False
+
+    pkt_rcv = serverSocket.recvfrom(buffer_size)  # recebe pacotes
     if pkt_rcv:
+        print('Chegou!')
         data, clientAddr = pkt_rcv
-        data = data.decode() #decodifica mensagem
-        if data[:16] == "hi, meu nome eh":
+        data = data.decode()  # decodifica mensagem
+        # print(data)
+        if data[:15] == "hi, meu nome eh":
             if not (clientAddr in users_dict):
-                user_name = data[17:]
+                user_name = data[16:]
                 users_list.append(user_name)
                 users_dict[clientAddr] = user_name
-                msg = user_name +' adicionado'
+                msg = user_name + ' adicionado'
                 print(msg)
+                serverSocket.sendto(
+                        msg.encode(), clientAddr) # envia para o usuário que se conectou
                 broadcast = True
         else:
             # identifica se pacote vem de um usuário cadastrado
-            user_name = users_dict.pop(clientAddr, False) 
-            if user_name: # lista de ações
+            user_name = users_dict.get(clientAddr, False)
+            if user_name:  # lista de ações
+                print('entrou na lista de opções')
                 if data[:4] == "bye":
                     user_name = users_dict.pop(clientAddr, False)
                     users_list.remove(user_name)
                     if user_name:
-                        msg = user_name +' saiu do chat'
+                        msg = user_name + ' saiu do chat'
                         print(msg)
                         broadcast = True
                 elif data[:4] == "list":
-                    serverSocket.sendto(str(users_list).encode(), clientAddr) # envia pacotes
+                    serverSocket.sendto(
+                        str(users_list).encode(), clientAddr)  # envia pacotes
+                    print(str(users_list))
                     broadcast = False
-                else: 
+                else:
                     # se não tiver um comando específico interpreta como mensagem comum
                     time = datetime.now()
                     time = time.strftime(' %H:%M %d/%m/%Y')
                     clientIP, clientPort = clientAddr
                     clientPort = str(clientPort)
-                    msg = clientIP + ':' + clientPort + '/~' + user_name + msg + ' ' +time
+                    msg = clientIP + ':' + clientPort + '/~' + user_name + ' ' + data + ' ' + time
+                    print(msg)
                     broadcast = True
 
         if broadcast:
-            for clientAddr,user_name in users_dict.items(): #broadcast
-                serverSocket.sendto(msg.encode(), clientAddr) # envia pacotes
-
-
-        
-
-   
-
+            print("BROADCAST")
+            print(users_dict)
+            for user_addr, user_name in users_dict.items():  # broadcast
+                #if clientAddr != user_addr:
+                if clientAddr != user_addr:
+                    print(f"Enviando para {user_name}...")
+                    serverSocket.sendto(
+                        msg.encode(), user_addr)  # envia pacotes

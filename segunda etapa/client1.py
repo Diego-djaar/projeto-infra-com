@@ -28,5 +28,3 @@ conexaoRDT = RDT(clientSocket)
 connectserver(conexaoRDT, username, serverAddr, buffer_size)
 print("Você está conectado ao servidor. Caso queira encerrar a conexão digite bye.")
 print("Para ter acesso à lista de usuários digite o comando list.")
-
-# Iniciar as threads de receber e enviar dados
