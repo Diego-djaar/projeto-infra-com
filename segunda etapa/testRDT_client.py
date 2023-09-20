@@ -25,6 +25,9 @@ async def main():
     await connectserver(conexaoRDT, username, serverAddr, buffer_size)
     await sendmsg(conexaoRDT, "Lá e de volta", serverAddr, buffer_size)
     await sendmsg(conexaoRDT, "Outra vez", serverAddr, buffer_size)
+    await sendmsg(conexaoRDT, "Outra vez2", serverAddr, buffer_size)
+    await sendmsg(conexaoRDT, "Outra vez3", serverAddr, buffer_size)
+    await sendmsg(conexaoRDT, "Outra vez4", serverAddr, buffer_size)
 
 
 if __name__ == "__main__":

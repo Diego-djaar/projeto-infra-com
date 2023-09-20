@@ -35,6 +35,8 @@ class RDT():
         return pkt
 
     async def wait_for_ack(self, string: str, serverAddr: tuple[str, int], buffer_size: int) -> bool:
+        if self.estado == RDT_Estados.Chamada_0 or self.estado == RDT_Estados.Chamada_1:
+            raise Exception("ERRO: Esperando ack antes de enviar mensagem")
         while self.estado == RDT_Estados.Ack_0 or self.estado == RDT_Estados.Ack_1:
             try:
                 # Tentar receber a mensagem
@@ -63,6 +65,8 @@ class RDT():
                 return False
 
     async def sendmsg(self, string: str, serverAddr: tuple[str, int], buffer_size: int):
+        if self.estado == RDT_Estados.Ack_0 or self.estado == RDT_Estados.Ack_1:
+            raise Exception("ERRO: Enviou mensagem antes de receber ack")
         # string = self.make_pkt(0 if self.estado == RDT_Estados.Chamada_0 else 1, string)
         with self.lock:
             self.clientSocket.sendto(string.encode(), serverAddr)

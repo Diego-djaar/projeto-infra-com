@@ -5,7 +5,6 @@ import threading
 
 
 async def sendRDT(objRDT: RDT, serverAddr: tuple[str, int], buffer_size: int):
-    global sequence_number, username
     print("Digite a sua mensagem:")
     mensagem = str(input())
     await objRDT.sendmsg(f"{mensagem}", 0, serverAddr, buffer_size)
