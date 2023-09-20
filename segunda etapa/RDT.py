@@ -81,25 +81,26 @@ class RDT():
     async def receivemsg(self, buffer_size: int):
         while True:
             # Tentar receber a mensagem
-            try:
+            self.clientSocket.settimeout(None)
+            with self.lock:
+                data, clientAdress = self.clientSocket.recvfrom(buffer_size)
+            # Verificação se o sequence number é o próximo esperado
+            seq_num = 0 if self.estado_dest == RDT_Dest.Baixo_0 else 1
+            data = data.decode("utf-8")
+            print(f"checking {data}")
+            print(data[0])
+            print(str(seq_num))
+            if (data[0] == str(seq_num)):
+                string = self.make_pkt("ACK", seq_num)  # Criando pacote ACK
                 with self.lock:
-                    data, clientAdress = self.clientSocket.recvfrom(buffer_size)
-                # Verificação se o sequence number é o próximo esperado
-                seq_num = 0 if self.estado_dest == RDT_Dest.Baixo_0 else 1
-                data = data.decode("utf-8")
-                print(f"checking {data}")
-                print(data[0])
-                print(str(seq_num))
-                if (data[0] == str(seq_num)):
-                    string = self.make_pkt("ACK", seq_num)  # Criando pacote ACK
-                    with self.lock:
-                        self.clientSocket.sendto(string.encode(), clientAdress)
+                    self.clientSocket.sendto(string.encode(), clientAdress)
 
-                    if self.estado_dest == RDT_Dest.Baixo_0:
-                        self.estado_dest = RDT_Dest.Baixo_1
-                    else:
-                        self.estado_dest = RDT_Dest.Baixo_0
-                    return data, clientAdress
-
-            except timeout:
-                continue
+                if self.estado_dest == RDT_Dest.Baixo_0:
+                    self.estado_dest = RDT_Dest.Baixo_1
+                else:
+                    self.estado_dest = RDT_Dest.Baixo_0
+                return data, clientAdress
+            else:
+                string = self.make_pkt("ACK", 0 if seq_num == 1 else 1)  # Reenviar ACK
+                with self.lock:
+                    self.clientSocket.sendto(string.encode(), clientAdress)
