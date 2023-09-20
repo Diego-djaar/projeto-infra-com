@@ -25,9 +25,10 @@ async def main():
     # Cliente pov
     username = "Dhayego"
 
+    RDTs.sock = serverSocket
+
     # Server pov
-    pktBuff = Pkt_buff(buffer_size, serverSocket)
-    t = threading.Thread(target=pktBuff.startloop, args=serverAddr, daemon=True)
+    t = threading.Thread(target=listenloop, daemon=True)
     t.start()
 
     await asyncio.sleep(999999999999999999999999999999999)

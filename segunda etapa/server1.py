@@ -2,12 +2,12 @@ from socket import *
 import asyncio
 import os
 import math
-from RDTs import Pkt_buff, RDT
+from RDTs import RDT
 import RDTs
 import threading
 
 
-async def connectclient(serverSocket: Pkt_buff, serverAddr: tuple[str, int], buffer_size: int, first: bool = True, set_addr: None | str = None) -> RDT:
+async def connectclient(serverSocket: socket, serverAddr: tuple[str, int], buffer_size: int, first: bool = True, set_addr: None | str = None) -> RDT:
     if (first):
         await serverSocket.bind(serverAddr)  # configura o número da porta
     objRDT = RDT(serverSocket, set_addr)
