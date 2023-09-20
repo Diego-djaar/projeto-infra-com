@@ -21,8 +21,10 @@ async def main():
 
     # Cliente pov
     username = "Dhayego"
+
     # Server pov
-    conexaoRDT = await connectclient(serverSocket, username, serverAddr, buffer_size)
+    pktBuff = Pkt_buff(buffer_size, serverSocket)
+    conexaoRDT = await connectclient(pktBuff, username, serverAddr, buffer_size)
     while (True):
         print(f"RECEIVED MESSAGE {(await conexaoRDT.receivemsg(buffer_size))[0]}")
 

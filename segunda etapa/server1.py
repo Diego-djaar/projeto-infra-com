@@ -6,8 +6,8 @@ from RDT import *
 import threading
 
 
-async def connectclient(serverSocket: socket, username: str, serverAddr: tuple[str, int], buffer_size: int) -> RDT:
-    serverSocket.bind(serverAddr)  # configura o número da porta
+async def connectclient(serverSocket: Pkt_buff, username: str, serverAddr: tuple[str, int], buffer_size: int) -> RDT:
+    await serverSocket.bind(serverAddr)  # configura o número da porta
     objRDT = RDT(serverSocket)
     mesg = await objRDT.receivemsg(buffer_size)
     print(f"RECEIVED CONEXION {mesg[0]}")

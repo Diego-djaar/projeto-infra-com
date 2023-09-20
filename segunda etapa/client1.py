@@ -15,7 +15,7 @@ async def connectserver(objRDT: RDT, username: str, serverAddr: tuple[str, int],
     msg = objRDT.make_pkt(msg)
     await objRDT.sendmsg(msg, serverAddr, buffer_size)
     print("conexion sent")
-    while not await objRDT.wait_for_ack(msg, serverAddr, buffer_size):
+    while not (await objRDT.wait_for_ack(msg, serverAddr, buffer_size)):
         print("waiting ack")
         continue
 

@@ -21,7 +21,8 @@ async def main():
 
     # Cliente pov
     username = "Dhayego"
-    conexaoRDT = RDT(clientSocket)
+    pktBuff = Pkt_buff(buffer_size, serverSocket)
+    conexaoRDT = RDT(pktBuff)
     await connectserver(conexaoRDT, username, serverAddr, buffer_size)
     await sendmsg(conexaoRDT, "Lá e de volta", serverAddr, buffer_size)
     await sendmsg(conexaoRDT, "Outra vez", serverAddr, buffer_size)
