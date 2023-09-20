@@ -73,7 +73,7 @@ class Pkt_buff():
 
 
 class RDT():
-    lock = threading.Lock()
+    lock = threading.RLock()
     clientSocket: Pkt_buff
     estado: RDT_Estados
     estado_dest: RDT_Dest
