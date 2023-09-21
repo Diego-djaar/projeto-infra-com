@@ -39,7 +39,7 @@ def listenloop(type=False, first_con=None):
         with lock:
             pkt = sock.recvfrom(buffsize)
             pkt = (pkt[0].decode("utf-8"), pkt[1])
-            print(f"checking {pkt}")
+            print(f"checking1 {pkt}")
 
     # Alternativamente, irá criar uma nova conexão, e então comunicar
             if not pkt[1] in addresslist and not type:  # Se for um endereço novo
@@ -62,7 +62,7 @@ def startloop(serverAddr0, serverAddr1, clientAddr=None):  # LOOP PRINCIPAL DE R
     connectclient = getattr(mymodule, 'connectclient')
     if (clientAddr == None):
         print(f"looping first")
-        conexaoRDT = connectclient(sock, serverAddr, buffsize)
+        conexaoRDT: RDT = connectclient(sock, serverAddr, buffsize)
     else:
         print(f"looping with {clientAddr}")
         conexaoRDT = connectclient(sock, serverAddr, buffsize, False, clientAddr)
@@ -71,8 +71,7 @@ def startloop(serverAddr0, serverAddr1, clientAddr=None):  # LOOP PRINCIPAL DE R
         mesg = conexaoRDT.receivemsg(buffsize)
         print(f"RECEIVED CONEXION {mesg[0]}")
         print(f"yay")
-        with lock:
-            print(f"RECEIVED MESSAGE {(conexaoRDT.receivemsg(buffsize))[0]}")
+        print(f"RECEIVED MESSAGE {(conexaoRDT.receivemsg(buffsize))[0]}")
 
 
 class RDT():
@@ -101,7 +100,7 @@ class RDT():
         ack_comp = 1 if is_ack else 0
         while True:
             pkt = self.buffer.get(timeout=timeout)
-            print(f'checking {pkt}')
+            print(f'checking2 {pkt}')
             if pkt[0][1] == str(ack_comp) and (pkt[1] == retAddress or retAddress == None):  # Verificar se é do tipo e endereço desejado
                 return pkt
 
@@ -166,6 +165,7 @@ class RDT():
             self.estado = RDT_Estados.Ack_1
 
     def receivemsg(self, buffer_size: int):
+        print("ohio")
         while True:
             # Tentar receber a mensagem
             with self.lock:
@@ -186,7 +186,7 @@ class RDT():
 
             # Verificação se o sequence number é o próximo esperado
             seq_num = 0 if self.estado_dest == RDT_Dest.Baixo_0 else 1
-            print(f"checking {data}")
+            print(f"checking3 {data}")
             if (data[0] == str(seq_num)):
                 string = self.make_pkt("", seq_num, True)  # Criando pacote ACK
                 with self.lock:
