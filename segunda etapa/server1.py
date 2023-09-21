@@ -2,7 +2,7 @@ from socket import *
 from RDTs import RDT
 import RDTs
 import threading
-import asyncio
+import time
 
 
 def initserver(serverSocket: socket, serverAddr: tuple[str, int], buffer_size: int, first: bool = True, set_addr: None | str = None) -> RDT:
@@ -13,7 +13,7 @@ def initserver(serverSocket: socket, serverAddr: tuple[str, int], buffer_size: i
     return objRDT
 
 
-async def main():
+def main():
     # Definições
     serverIP = "127.0.0.1"  # Já vai ser conhecido então pode ser implementado sem o input
     serverPort = 8001
@@ -28,8 +28,8 @@ async def main():
     t.start()
 
     # Fazer a aplicação não terminar prematuramente
-    await asyncio.sleep(999999999999999999999999999999999)
+    time.sleep(9999999)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
