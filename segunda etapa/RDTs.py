@@ -36,6 +36,8 @@ lock_sock_send = threading.RLock()
 lock_list = threading.RLock()
 buffsize = 1024
 addresslist = []
+lock_ulist = threading.RLock()
+user_list = []
 buff = [Queue()]
 
 
@@ -83,6 +85,9 @@ def startloop(serverAddr0, serverAddr1, clientAddr=None):  # LOOP PRINCIPAL DE R
     mesg, clientAddr = conexaoRDT.receivemsg(buffsize)
     user_name = mesg[18:]
     msg = f'~{user_name} entrou na Sala'
+
+    with lock_ulist:
+        user_list.append((user_name, clientAddr))
     # print(msg)
 
     def broadcast(mesg):
@@ -102,9 +107,21 @@ def startloop(serverAddr0, serverAddr1, clientAddr=None):  # LOOP PRINCIPAL DE R
         clientIP, clientPort = clientAddr
         clientPort = str(clientPort)
         mesg = mesg[2:]
-        msg = clientIP + ':' + clientPort + '/~' + user_name + ': ' + mesg + ' ' + time
-        # print(msg)
-        broadcast(msg)
+
+        if (mesg == "list"):
+            msg = "IP:PORTA         NOME:\n"
+
+            with lock_ulist:
+                for user, addr in user_list:
+                    msg += f"({clientIP + ':' + clientPort})    {user}\n"
+            msg = conexaoRDT.make_pkt(msg)
+            conexaoRDT.sendmsg(msg, conexaoRDT.retAddress, buffsize)
+            while not conexaoRDT.wait_for_ack(msg, conexaoRDT.retAddress, buffsize):
+                continue
+        else:
+            msg = clientIP + ':' + clientPort + '/~' + user_name + ': ' + mesg + ' ' + time
+            # print(msg)
+            broadcast(msg)
 
 
 class RDT():
