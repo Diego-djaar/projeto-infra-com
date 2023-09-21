@@ -32,7 +32,7 @@ buff = [Queue()]
 
 
 def listenloop(type=False, first_con=None):
-    # print('starting listen loop')
+    # # print('starting listen loop')
     # O canal vai ouvir a conexão do socket e retornar 2 casos
     # 1) Criar nova conexão
     # 2) Retornar para a conexão certa
@@ -42,12 +42,12 @@ def listenloop(type=False, first_con=None):
         with lock_sock_recv:
             pkt = sock.recvfrom(buffsize)
             pkt = (pkt[0].decode("utf-8"), pkt[1])
-            print(f"checking1 {pkt}")
+            # print(f"checking1 {pkt}")
 
         with lock_list:
             # Alternativamente, irá criar uma nova conexão, e então comunicar
             if not pkt[1] in addresslist and not type:  # Se for um endereço novo
-                print("Add new RDT")
+                # print("Add new RDT")
                 addresslist.append(pkt[1])
 
                 arg = (pkt[1][0], pkt[1][1], pkt[1])
@@ -60,18 +60,18 @@ def listenloop(type=False, first_con=None):
 
 
 def startloop(serverAddr0, serverAddr1, clientAddr=None):  # LOOP PRINCIPAL DE RECEBER MENSAGENS
-    # print('starting loop')
+    # # print('starting loop')
     serverAddr = (serverAddr0, serverAddr1)
     mymodule = importlib.import_module('server1')
     connectclient = getattr(mymodule, 'connectclient')
     if (clientAddr == None):
-        # print(f"looping first")
+        # # print(f"looping first")
         conexaoRDT: RDT = connectclient(sock, serverAddr, buffsize)
     else:
-        # print(f"looping with {clientAddr}")
+        # # print(f"looping with {clientAddr}")
         conexaoRDT = connectclient(sock, serverAddr, buffsize, False, clientAddr)
 
-    print('ohio')
+    # print('ohio')
     mesg = conexaoRDT.receivemsg(buffsize)
     print(f"RECEIVED CONEXION {mesg[0]}")
     while (True):
@@ -101,7 +101,7 @@ class RDT():
         ack_comp = 1 if is_ack else 0
         while True:
             pkt = self.buffer.get(timeout=timeout)
-            print(f'checking2 {pkt} from {retAddress1}')
+            # print(f'checking2 {pkt} from {retAddress1}')
             if pkt[0][1] == str(ack_comp) and (pkt[1] == retAddress or retAddress == None):  # Verificar se é do tipo e endereço desejado
                 return pkt
 
@@ -109,7 +109,7 @@ class RDT():
         sock = clientSocket
         self.estado = RDT_Estados.Chamada_0
         self.estado_dest = RDT_Dest.Baixo_0
-        print(f"started RDT with addr {retAddr}")
+        # print(f"started RDT with addr {retAddr}")
         self.retAddress = retAddr
         self.buffer = Queue()
         self.buff_index = buff.__len__()
@@ -129,7 +129,7 @@ class RDT():
         while self.estado == RDT_Estados.Ack_0 or self.estado == RDT_Estados.Ack_1:
             try:
                 # Tentar receber a mensagem
-                print(f"Ack from {self.retAddress} {type(self.retAddress)}")
+                # print(f"Ack from {self.retAddress} {type(self.retAddress)}")
                 data, retAdress = self.recvfrom(True, self.retAddress[0], self.retAddress[1], 2)
 
                 # Verificação se o ACK corresponde à última msg enviada
@@ -154,7 +154,7 @@ class RDT():
         if self.estado == RDT_Estados.Ack_0 or self.estado == RDT_Estados.Ack_1:
             raise Exception("ERRO: Enviou mensagem antes de receber ack")
         with lock_sock_send:
-            print("enviando")
+            # print("enviando")
             if (self.retAddress == None):
                 self.retAddress = serverAddr
             sock.sendto(string.encode(), serverAddr)
@@ -166,27 +166,27 @@ class RDT():
             self.estado = RDT_Estados.Ack_1
 
     def receivemsg(self, buffer_size: int):
-        print('barcelona')
+        # print('barcelona')
         while True:
             # Tentar receber a mensagem
-            print(f'Receiving from {self.retAddress}')
+            # print(f'Receiving from {self.retAddress}')
             if self.retAddress == None:
                 data, clientAdress = self.recvfrom(False, None, None)
             else:
                 data, clientAdress = self.recvfrom(False, self.retAddress[0], self.retAddress[1])
 
-            print(f"Msg from {clientAdress}")
+            # print(f"Msg from {clientAdress}")
 
             if (self.retAddress == None):
-                print(f"set dyn RDT with addr {clientAdress}")
+                # print(f"set dyn RDT with addr {clientAdress}")
                 self.retAddress = clientAdress
 
             if (self.retAddress != clientAdress):
                 print("TODO clientes diferentes.")
 
-            # Verificação se o sequence number é o próximo esperado
+                # Verificação se o sequence number é o próximo esperado
             seq_num = 0 if self.estado_dest == RDT_Dest.Baixo_0 else 1
-            print(f"checking3 {data}")
+            # print(f"checking3 {data}")
             if (data[0] == str(seq_num)):
                 string = self.make_pkt("", seq_num, True)  # Criando pacote ACK
                 with lock_sock_send:
