@@ -1,5 +1,4 @@
 from socket import *
-import asyncio
 import os
 import math
 from RDTs import RDT
@@ -7,16 +6,15 @@ import RDTs
 import threading
 
 
-async def connectclient(serverSocket: socket, serverAddr: tuple[str, int], buffer_size: int, first: bool = True, set_addr: None | str = None) -> RDT:
-    if (first):
-        await serverSocket.bind(serverAddr)  # configura o número da porta
+def connectclient(serverSocket: socket, serverAddr: tuple[str, int], buffer_size: int, first: bool = True, set_addr: None | str = None) -> RDT:
+    print('initializing server')
     objRDT = RDT(serverSocket, set_addr)
-    # mesg = await objRDT.receivemsg(buffer_size)
+    # mesg = objRDT.receivemsg(buffer_size)
     # print(f"RECEIVED CONEXION {mesg[0]}")
     return objRDT
 
 
-async def main():
+def main():
     # Definições e Inicializar servidor
     serverIP = gethostbyname(gethostname())  # adquirir IP do sevidor
     serverPort = 12000  # define número da porta
@@ -29,5 +27,6 @@ async def main():
     # novo_path, clientAddr = Receivefile(serverSocket, buffer_size)  # recebe pacotes
     # Sendfile(novo_path, serverSocket, clientAddr, buffer_size)  # envia pacotes
 
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

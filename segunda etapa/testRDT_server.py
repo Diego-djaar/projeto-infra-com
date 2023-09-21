@@ -26,13 +26,13 @@ async def main():
     username = "Dhayego"
 
     RDTs.sock = serverSocket
+    RDTs.sock.bind(serverAddr)
 
     # Server pov
     t = threading.Thread(target=listenloop, daemon=True)
     t.start()
 
     await asyncio.sleep(999999999999999999999999999999999)
-
 
 if __name__ == "__main__":
     asyncio.run(main())

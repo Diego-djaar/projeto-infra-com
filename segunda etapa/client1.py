@@ -1,35 +1,34 @@
 from socket import *
 from RDTs import *
-import asyncio
 import threading
 
 
-async def sendRDT(objRDT: RDT, serverAddr: tuple[str, int], buffer_size: int):
+def sendRDT(objRDT: RDT, serverAddr: tuple[str, int], buffer_size: int):
     print("Digite a sua mensagem:")
     mensagem = str(input())
-    await objRDT.sendmsg(f"{mensagem}", 0, serverAddr, buffer_size)
+    objRDT.sendmsg(f"{mensagem}", 0, serverAddr, buffer_size)
 
 
-async def connectserver(objRDT: RDT, username: str, serverAddr: tuple[str, int], buffer_size: int):
+def connectserver(objRDT: RDT, username: str, serverAddr: tuple[str, int], buffer_size: int):
     msg = f"hi, meu nome eh {username}"
     msg = objRDT.make_pkt(msg)
-    await objRDT.sendmsg(msg, serverAddr, buffer_size)
+    objRDT.sendmsg(msg, serverAddr, buffer_size)
     print("conexion sent")
-    while not (await objRDT.wait_for_ack(msg, serverAddr, buffer_size)):
+    while not (objRDT.wait_for_ack(msg, serverAddr, buffer_size)):
         print("waiting ack")
         continue
 
 
-async def sendmsg(objRDT: RDT, msg: str, serverAddr: tuple[str, int], buffer_size: int):
+def sendmsg(objRDT: RDT, msg: str, serverAddr: tuple[str, int], buffer_size: int):
     msg = objRDT.make_pkt(msg)
-    await objRDT.sendmsg(msg, serverAddr, buffer_size)
+    objRDT.sendmsg(msg, serverAddr, buffer_size)
     print("message sent")
-    while not await objRDT.wait_for_ack(msg, serverAddr, buffer_size):
+    while not objRDT.wait_for_ack(msg, serverAddr, buffer_size):
         print("waiting ack")
         continue
 
 
-async def main():
+def main():
     # Definições
     serverIP = input("Insira o IP do servidor: ")  # Já vai ser conhecido então pode ser implementado sem o input
     serverPort = 12000
@@ -40,7 +39,7 @@ async def main():
 
     username = str(input("Qual o seu nome de usuário?"))
     conexaoRDT = RDT(clientSocket)
-    await connectserver(conexaoRDT, username, serverAddr, buffer_size)
+    connectserver(conexaoRDT, username, serverAddr, buffer_size)
     print("Você está conectado ao servidor. Caso queira encerrar a conexão digite bye.")
     print("Para ter acesso à lista de usuários digite o comando list.")
 
@@ -53,4 +52,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

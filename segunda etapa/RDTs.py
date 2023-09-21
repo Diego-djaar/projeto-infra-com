@@ -1,6 +1,5 @@
 from socket import *
 from enum import Enum
-import asyncio
 import threading
 from typing import Any
 import traceback
@@ -30,6 +29,7 @@ buff = [Queue()]
 
 
 def listenloop(type=False, first_con=None):
+    print('starting listen loop')
     # O canal vai ouvir a conexão do socket e retornar 2 casos
     # 1) Criar nova conexão
     # 2) Retornar para a conexão certa
@@ -55,29 +55,24 @@ def listenloop(type=False, first_con=None):
                 b.put(pkt)
 
 
-def startloop(serverAddr0, serverAddr1, clientAddr=None):
-    # print(f"new loop with {serverAddr1}")
-    asyncio.run(rdtloop(serverAddr0, serverAddr1, clientAddr))
-
-
-async def rdtloop(serverAddr0, serverAddr1, clientAddr=None):  # LOOP PRINCIPAL DE RECEBER MENSAGENS
+def startloop(serverAddr0, serverAddr1, clientAddr=None):  # LOOP PRINCIPAL DE RECEBER MENSAGENS
+    print('starting loop')
     serverAddr = (serverAddr0, serverAddr1)
     mymodule = importlib.import_module('server1')
     connectclient = getattr(mymodule, 'connectclient')
     if (clientAddr == None):
         print(f"looping first")
-        conexaoRDT = await connectclient(sock, serverAddr, buffsize)
+        conexaoRDT = connectclient(sock, serverAddr, buffsize)
     else:
         print(f"looping with {clientAddr}")
-        conexaoRDT = await connectclient(sock, serverAddr, buffsize, False, clientAddr)
+        conexaoRDT = connectclient(sock, serverAddr, buffsize, False, clientAddr)
 
     while (True):
-        mesg = await conexaoRDT.receivemsg(buffsize)
+        mesg = conexaoRDT.receivemsg(buffsize)
         print(f"RECEIVED CONEXION {mesg[0]}")
         print(f"yay")
         with lock:
-            print(f"RECEIVED MESSAGE {(await conexaoRDT.receivemsg(buffsize))[0]}")
-        await asyncio.sleep(0.1)
+            print(f"RECEIVED MESSAGE {(conexaoRDT.receivemsg(buffsize))[0]}")
 
 
 class RDT():
@@ -92,10 +87,12 @@ class RDT():
 
     # Isso vai distribuir as mensagens para os RDTs
 
-    async def recvfrom(self, is_ack: bool, retAddress0, retAddress1) -> tuple[str, Any]:
+    def recvfrom(self, is_ack: bool, retAddress0, retAddress1, timeout=9999999) -> tuple[str, Any]:
         # O que eu preciso fazer aqui é
         # Esperar receber uma mensagem correta e então retorna-la para a função correspondente
         # No caso de uma nova conexão, realizar o spawn e, ao chamar essa função, retornar a mensagem
+
+        print(f"hi from {retAddress1}")
 
         if retAddress0 == None:
             retAddress = None
@@ -103,14 +100,10 @@ class RDT():
             retAddress = (retAddress0, retAddress1)
         ack_comp = 1 if is_ack else 0
         while True:
-            try:
-                pkt = self.buffer.get()
-                if pkt[0][1] == str(ack_comp) and (pkt[1] == retAddress or retAddress == None):  # Verificar se é do tipo e endereço desejado
-                    return pkt
-                else:
-                    self.buffer.put(pkt)
-            except TimeoutError:
-                await asyncio.sleep(0.1)
+            pkt = self.buffer.get(timeout=timeout)
+            print(f'checking {pkt}')
+            if pkt[0][1] == str(ack_comp) and (pkt[1] == retAddress or retAddress == None):  # Verificar se é do tipo e endereço desejado
+                return pkt
 
     def __init__(self, clientSocket: socket, retAddr=None):
         sock = clientSocket
@@ -121,6 +114,7 @@ class RDT():
         self.buffer = Queue()
         self.buff_index = buff.__len__()
         buff.append(self.buffer)
+        sock.settimeout(None)
 
     def make_pkt(self, data: str, seqnum: int = 2, is_ack: bool = False) -> str:
         if seqnum == 2:
@@ -129,7 +123,7 @@ class RDT():
         pkt = str(seqnum) + str(acknum) + data  # + str(self.checksum(data))
         return pkt
 
-    async def wait_for_ack(self, string: str, serverAddr: tuple[str, int], buffer_size: int) -> bool:
+    def wait_for_ack(self, string: str, serverAddr: tuple[str, int], buffer_size: int) -> bool:
         if self.estado == RDT_Estados.Chamada_0 or self.estado == RDT_Estados.Chamada_1:
             raise Exception("ERRO: Esperando ack antes de enviar mensagem")
         while self.estado == RDT_Estados.Ack_0 or self.estado == RDT_Estados.Ack_1:
@@ -137,12 +131,11 @@ class RDT():
                 # Tentar receber a mensagem
                 with self.lock:
                     print(f"Ack from {self.retAddress} {type(self.retAddress)}")
-                    data, retAdress = await self.recvfrom(True, self.retAddress[0], self.retAddress[1])
+                    data, retAdress = self.recvfrom(True, self.retAddress[0], self.retAddress[1], 2)
 
                 # Verificação se o ACK corresponde à última msg enviada
                 ack_num = 0 if self.estado == RDT_Estados.Ack_0 else 1
                 if (data[0] == str(ack_num) and retAdress == serverAddr and data[1:] == "1"):
-                    sock.settimeout(None)
 
                     # Vai para o próximo estado
                     if self.estado == RDT_Estados.Ack_0:
@@ -153,13 +146,12 @@ class RDT():
                 else:
                     continue  # Ack incorreto
 
-            except timeout:
+            except:
                 with self.lock:
                     sock.sendto(string.encode(), serverAddr)
-                    sock.settimeout(2)
                 return False
 
-    async def sendmsg(self, string: str, serverAddr: tuple[str, int], buffer_size: int):
+    def sendmsg(self, string: str, serverAddr: tuple[str, int], buffer_size: int):
         if self.estado == RDT_Estados.Ack_0 or self.estado == RDT_Estados.Ack_1:
             raise Exception("ERRO: Enviou mensagem antes de receber ack")
         with self.lock:
@@ -167,23 +159,21 @@ class RDT():
                 self.retAddress = serverAddr
             sock.sendto(string.encode(), serverAddr)
             self.last_msg = string
-            sock.settimeout(2)
 
         if self.estado == RDT_Estados.Chamada_0:
             self.estado = RDT_Estados.Ack_0
         else:
             self.estado = RDT_Estados.Ack_1
 
-    async def receivemsg(self, buffer_size: int):
+    def receivemsg(self, buffer_size: int):
         while True:
             # Tentar receber a mensagem
-            sock.settimeout(None)
             with self.lock:
                 print(f'Receiving from {self.retAddress}')
                 if self.retAddress == None:
-                    data, clientAdress = await self.recvfrom(False, None, None, self.index)
+                    data, clientAdress = self.recvfrom(False, None, None)
                 else:
-                    data, clientAdress = await self.recvfrom(False, self.retAddress[0], self.retAddress[1], self.index)
+                    data, clientAdress = self.recvfrom(False, self.retAddress[0], self.retAddress[1])
 
             print(f"Msg from {clientAdress}")
 

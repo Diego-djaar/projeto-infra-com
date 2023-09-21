@@ -23,17 +23,17 @@ async def main():
     username = "Dhayego"
 
     RDTs.sock = clientSocket
-    t = threading.Thread(target=listenloop, daemon=True)
+    t = threading.Thread(target=listenloop, args=(True, clientSocket), daemon=True)
     t.start()
 
     conexaoRDT = RDT(clientSocket)
 
-    await connectserver(conexaoRDT, username, serverAddr, buffer_size)
-    await sendmsg(conexaoRDT, "Lá e de volta", serverAddr, buffer_size)
-    await sendmsg(conexaoRDT, "Outra vez", serverAddr, buffer_size)
-    await sendmsg(conexaoRDT, "Outra vez2", serverAddr, buffer_size)
-    await sendmsg(conexaoRDT, "Outra vez3", serverAddr, buffer_size)
-    await sendmsg(conexaoRDT, "Outra vez4", serverAddr, buffer_size)
+    connectserver(conexaoRDT, username, serverAddr, buffer_size)
+    sendmsg(conexaoRDT, "Lá e de volta", serverAddr, buffer_size)
+    sendmsg(conexaoRDT, "Outra vez", serverAddr, buffer_size)
+    sendmsg(conexaoRDT, "Outra vez2", serverAddr, buffer_size)
+    sendmsg(conexaoRDT, "Outra vez3", serverAddr, buffer_size)
+    sendmsg(conexaoRDT, "Outra vez4", serverAddr, buffer_size)
 
 
 if __name__ == "__main__":
