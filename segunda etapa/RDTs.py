@@ -9,6 +9,13 @@ from queue import Queue
 from datetime import datetime
 # from server1 import connectclient
 
+is_server: bool = True
+
+
+def server_debug(cmd):
+    if is_server:
+        print(cmd)
+
 
 class RDT_Estados(Enum):
     Chamada_0 = 0
@@ -42,6 +49,7 @@ def listenloop(type=False, first_con=None):
         with lock_sock_recv:
             pkt = sock.recvfrom(buffsize)
             pkt = (pkt[0].decode("utf-8"), pkt[1])
+            # print(pkt)
 
         with lock_list:
             # Alternativamente, irá criar uma nova conexão, e então comunicar
@@ -74,7 +82,22 @@ def startloop(serverAddr0, serverAddr1, clientAddr=None):  # LOOP PRINCIPAL DE R
     # Se conecta ao cliente
     mesg, clientAddr = conexaoRDT.receivemsg(buffsize)
     user_name = mesg[18:]
-    print(f"{user_name} entrou na Sala")
+    msg = f'{user_name} entrou na Sala'
+    print(msg)
+
+    def broadcast(msg):
+        import asyncio
+        for addr in addresslist:
+            while conexaoRDT.estado == RDT_Estados.Ack_0 or conexaoRDT.estado == RDT_Estados.Ack_1:
+                import time
+                time.sleep(0)
+            msg = conexaoRDT.make_pkt(msg)
+            conexaoRDT.sendmsg(msg, addr, buffsize)
+            while not conexaoRDT.wait_for_ack(msg, serverAddr, buffsize):
+                continue
+        return True
+    # t = threading.Thread(target=broadcast, args=(msg,), daemon=True)
+    # t.start()
 
     # Loop de receber mensagens
     while True:
@@ -86,6 +109,8 @@ def startloop(serverAddr0, serverAddr1, clientAddr=None):  # LOOP PRINCIPAL DE R
         mesg = mesg[2:]
         msg = clientIP + ':' + clientPort + '/~' + user_name + ': ' + mesg + ' ' + time
         print(msg)
+        # t = threading.Thread(target=broadcast, args=(msg,), daemon=True)
+        # t.start()
 
 
 class RDT():
@@ -96,6 +121,7 @@ class RDT():
     estado_dest: RDT_Dest
     retAddress = None
     last_msg: str
+    lock_message = threading.RLock()
 
     # Isso vai distribuir as mensagens para os RDTs
 
@@ -132,53 +158,65 @@ class RDT():
         return pkt
 
     def wait_for_ack(self, string: str, serverAddr: tuple[str, int], buffer_size: int) -> bool:
-        if self.estado == RDT_Estados.Chamada_0 or self.estado == RDT_Estados.Chamada_1:
-            raise Exception("ERRO: Esperando ack antes de enviar mensagem")
-        while self.estado == RDT_Estados.Ack_0 or self.estado == RDT_Estados.Ack_1:
-            try:
-                # Tentar receber a mensagem
-                data, retAdress = self.recvfrom(True, self.retAddress[0], self.retAddress[1], 2)
+        with self.lock_message:
+            if self.estado == RDT_Estados.Chamada_0 or self.estado == RDT_Estados.Chamada_1:
+                raise Exception("ERRO: Esperando ack antes de enviar mensagem")
 
-                # Verificação se o ACK corresponde à última msg enviada
-                ack_num = 0 if self.estado == RDT_Estados.Ack_0 else 1
-                if (data[0] == str(ack_num) and retAdress == serverAddr and data[1:] == "1"):
+            ack_num = 0 if self.estado == RDT_Estados.Ack_0 else 1
+            while self.estado == RDT_Estados.Ack_0 or self.estado == RDT_Estados.Ack_1:
+                try:
+                    # Tentar receber o Ack
+                    server_debug(f"Esperando Ack{ack_num}")
+                    data, retAdress = self.recvfrom(True, self.retAddress[0], self.retAddress[1], 2)
 
-                    # Vai para o próximo estado
-                    if self.estado == RDT_Estados.Ack_0:
-                        self.estado = RDT_Estados.Chamada_1
+                    # Verificação se o ACK corresponde à última msg enviada
+                    server_debug("Verificando Ack")
+                    if (data[0] == str(ack_num) and retAdress == serverAddr and data[1:] == "1"):
+
+                        # Vai para o próximo estado
+                        if self.estado == RDT_Estados.Ack_0:
+                            server_debug("Enviado, indo para o estado de Esperar chamada 1 de cima")
+                            self.estado = RDT_Estados.Chamada_1
+                        else:
+                            server_debug("Enviado, indo para o estado de Esperar chamada 0 de cima")
+                            self.estado = RDT_Estados.Chamada_0
+                        return True
                     else:
-                        self.estado = RDT_Estados.Chamada_0
-                    return True
-                else:
-                    continue  # Ack incorreto
-
-            except:
-                # Timeout da queue
-                with lock_sock_send:
-                    sock.sendto(string.encode(), serverAddr)
-                return False
+                        continue  # Ack incorreto
+                except:
+                    # Timeout da queue
+                    server_debug("Timeout na espera do Ack, reenviando")
+                    with lock_sock_send:
+                        sock.sendto(string.encode(), serverAddr)
+                    return False
 
     def sendmsg(self, string: str, serverAddr: tuple[str, int], buffer_size: int):
-        # Envia a mensagem
+        with self.lock_message:
+            # Envia a mensagem
 
-        if self.estado == RDT_Estados.Ack_0 or self.estado == RDT_Estados.Ack_1:
-            raise Exception("ERRO: Enviou mensagem antes de receber ack")
+            if self.estado == RDT_Estados.Ack_0 or self.estado == RDT_Estados.Ack_1:
+                raise Exception("ERRO: Enviou mensagem antes de receber ack")
 
-        with lock_sock_send:
-            if (self.retAddress == None):
-                self.retAddress = serverAddr
-            sock.sendto(string.encode(), serverAddr)
-            self.last_msg = string
+            server_debug(f"Enviando pacote {string[0]}")
+            with lock_sock_send:
+                if (self.retAddress == None):
+                    self.retAddress = serverAddr
+                sock.sendto(string.encode(), serverAddr)
+                self.last_msg = string
 
-        # Muda para o estado de Ack correspondente
-        if self.estado == RDT_Estados.Chamada_0:
-            self.estado = RDT_Estados.Ack_0
-        else:
-            self.estado = RDT_Estados.Ack_1
+            # Muda para o estado de Ack correspondente
+            if self.estado == RDT_Estados.Chamada_0:
+                server_debug("Enviado, indo para o estado de Esperar ACK 0")
+                self.estado = RDT_Estados.Ack_0
+            else:
+                server_debug("Enviado, indo para o estado de Esperar ACK 1")
+                self.estado = RDT_Estados.Ack_1
 
     def receivemsg(self, buffer_size: int):
         while True:
             # Tentar receber a mensagem
+            seq_num = 0 if self.estado_dest == RDT_Dest.Baixo_0 else 1
+            server_debug(f"Esperando pacote {seq_num}")
             if self.retAddress == None:
                 data, clientAdress = self.recvfrom(False, None, None)
             else:
@@ -187,22 +225,24 @@ class RDT():
             if (self.retAddress == None):
                 self.retAddress = clientAdress
             if (self.retAddress != clientAdress):
-                print("TODO clientes diferentes.")
+                server_debug("TODO clientes diferentes.")
 
             # Verificação se o sequence number é o próximo esperado
-            seq_num = 0 if self.estado_dest == RDT_Dest.Baixo_0 else 1
+            server_debug("Verificando pacote")
             if (data[0] == str(seq_num)):  # Se for
                 string = self.make_pkt("", seq_num, True)  # Criando pacote ACK
                 with lock_sock_send:
                     sock.sendto(string.encode(), clientAdress)
-
                 # Troca de estado
                 if self.estado_dest == RDT_Dest.Baixo_0:
+                    server_debug("Recebido, indo para o estado de chamada 1 de baixo")
                     self.estado_dest = RDT_Dest.Baixo_1
                 else:
+                    server_debug("Recebido, indo para o estado de chamada 0 de baixo")
                     self.estado_dest = RDT_Dest.Baixo_0
                 return data, clientAdress
             else:  # Se não for
+                server_debug("Pacote antigo, reenviar Ack")
                 string = self.make_pkt("", 0 if seq_num == 1 else 1)  # Reenviar ACK
                 with lock_sock_send:
                     sock.sendto(string.encode(), clientAdress)

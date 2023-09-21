@@ -67,6 +67,7 @@ def main():
     username = str(input("hi, meu nome eh "))
 
     RDTs.sock = clientSocket
+    RDTs.is_server = False
     t = threading.Thread(target=listenloop, args=(True, clientSocket), daemon=True)
     t.start()
 
@@ -75,13 +76,22 @@ def main():
     print("Você está conectado ao servidor. Caso queira encerrar a conexão digite bye.")
     print("Para ter acesso à lista de usuários digite o comando list.")
 
+    def chat_pub():
+        while True:
+            mesg, serverAddr = conexaoRDT.receivemsg(buffsize)
+            print(mesg[2:])
+
+    # t = threading.Thread(target=chat_pub, daemon=True)
+    # t.start()
+
     while True:
         msg = input()
         if msg == "list":
-            print_lista()
+            print("Sofia, PV, Rebeca")
         elif msg == "bye":
             exit(0)
-        sendmsg(conexaoRDT, msg, serverAddr, buffer_size)
+        else:
+            sendmsg(conexaoRDT, msg, serverAddr, buffer_size)
 
 
 if __name__ == "__main__":

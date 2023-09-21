@@ -1,9 +1,8 @@
 from socket import *
-import os
-import math
 from RDTs import RDT
 import RDTs
 import threading
+import asyncio
 
 
 def initserver(serverSocket: socket, serverAddr: tuple[str, int], buffer_size: int, first: bool = True, set_addr: None | str = None) -> RDT:
@@ -14,19 +13,22 @@ def initserver(serverSocket: socket, serverAddr: tuple[str, int], buffer_size: i
     return objRDT
 
 
-def main():
-    # Definições e Inicializar servidor
-    serverIP = gethostbyname(gethostname())  # adquirir IP do sevidor
-    serverPort = 12000  # define número da porta
-    serverSocket = socket(AF_INET, SOCK_DGRAM)  # cria socket UDP para o servidor
-    serverSocket.bind(('', serverPort))  # configura o número da porta
-    buffer_size = 1024  # define a quantidade de bytes do buffer
-    # print('O servidor está pronto para receber')
-    # print('O IP do servidor é', serverIP)
+async def main():
+    serverIP = "127.0.0.1"  # Já vai ser conhecido então pode ser implementado sem o input
+    serverPort = 8001
+    serverAddr = (serverIP, serverPort)  # define tupla com IP e porta de destino
+    buffer_size = 1024  # define tamnaho do buffer
+    serverSocket = socket(AF_INET, SOCK_DGRAM)  # cria socket para UDP
 
-    # novo_path, clientAddr = Receivefile(serverSocket, buffer_size)  # recebe pacotes
-    # Sendfile(novo_path, serverSocket, clientAddr, buffer_size)  # envia pacotes
+    RDTs.sock = serverSocket
+    RDTs.sock.bind(serverAddr)
+
+    # Server pov
+    t = threading.Thread(target=RDTs.listenloop, daemon=True)
+    t.start()
+
+    await asyncio.sleep(999999999999999999999999999999999)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
