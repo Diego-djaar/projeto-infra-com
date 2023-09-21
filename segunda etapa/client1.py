@@ -81,8 +81,8 @@ def main():
             mesg, serverAddr = conexaoRDT.receivemsg(buffsize)
             print(mesg[2:])
 
-    # t = threading.Thread(target=chat_pub, daemon=True)
-    # t.start()
+    t = threading.Thread(target=chat_pub, daemon=True)
+    t.start()
 
     while True:
         msg = input()
