@@ -1,5 +1,6 @@
 from socket import *
 from RDTs import *
+import RDTs
 import threading
 
 
@@ -64,6 +65,11 @@ def main():
     serverSocket = socket(AF_INET, SOCK_DGRAM)  # cria socket para UDP
 
     username = str(input("Qual o seu nome de usuário?"))
+
+    RDTs.sock = clientSocket
+    t = threading.Thread(target=listenloop, args=(True, clientSocket), daemon=True)
+    t.start()
+
     conexaoRDT = RDT(clientSocket)
     connectserver(conexaoRDT, username, serverAddr, buffer_size)
     print("Você está conectado ao servidor. Caso queira encerrar a conexão digite bye.")
