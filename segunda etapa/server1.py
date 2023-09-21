@@ -14,12 +14,12 @@ def initserver(serverSocket: socket, serverAddr: tuple[str, int], buffer_size: i
 
 
 async def main():
+    # Definições
     serverIP = "127.0.0.1"  # Já vai ser conhecido então pode ser implementado sem o input
     serverPort = 8001
     serverAddr = (serverIP, serverPort)  # define tupla com IP e porta de destino
     buffer_size = 1024  # define tamnaho do buffer
     serverSocket = socket(AF_INET, SOCK_DGRAM)  # cria socket para UDP
-
     RDTs.sock = serverSocket
     RDTs.sock.bind(serverAddr)
 
@@ -27,6 +27,7 @@ async def main():
     t = threading.Thread(target=RDTs.listenloop, daemon=True)
     t.start()
 
+    # Fazer a aplicação não terminar prematuramente
     await asyncio.sleep(999999999999999999999999999999999)
 
 
