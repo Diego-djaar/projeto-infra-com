@@ -64,7 +64,7 @@ def main():
     clientSocket = socket(AF_INET, SOCK_DGRAM)  # cria socket para UDP
     serverSocket = socket(AF_INET, SOCK_DGRAM)  # cria socket para UDP
 
-    username = str(input("Qual o seu nome de usuário?"))
+    username = str(input("hi, meu nome eh "))
 
     RDTs.sock = clientSocket
     t = threading.Thread(target=listenloop, args=(True, clientSocket), daemon=True)
@@ -75,12 +75,13 @@ def main():
     print("Você está conectado ao servidor. Caso queira encerrar a conexão digite bye.")
     print("Para ter acesso à lista de usuários digite o comando list.")
 
-    # Iniciar as threads de receber e enviar dados
-    # receiveThread = threading.Thread(target =, args =)
-    # receiveThread.start()
-
-    # sendThread = threading.Thread(target = await sendRDT(conexaoRDT, serverAddr, buffer_size), name = "Send Thread")
-    # sendThread.start()
+    while True:
+        msg = input()
+        if msg == "list":
+            print_lista()
+        elif msg == "bye":
+            exit(0)
+        sendmsg(conexaoRDT, msg, serverAddr, buffer_size)
 
 
 if __name__ == "__main__":

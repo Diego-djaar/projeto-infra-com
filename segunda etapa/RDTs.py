@@ -74,16 +74,16 @@ def startloop(serverAddr0, serverAddr1, clientAddr=None):  # LOOP PRINCIPAL DE R
 
     # print('ohio')
     mesg, clientAddr = conexaoRDT.receivemsg(buffsize)
-    user_name = mesg[19:]
-    print(f"RECEIVED CONEXION {mesg[0]}")
+    user_name = mesg[18:]
+    print(f"{user_name} entrou na Sala")
     while (True):
-        print(f"RECEIVED MESSAGE {(conexaoRDT.receivemsg(buffsize))[0]}")
+        mesg, clientAddr = conexaoRDT.receivemsg(buffsize)
         time = datetime.now()
         time = time.strftime(' %H:%M %d/%m/%Y')
         clientIP, clientPort = clientAddr
         clientPort = str(clientPort)
         mesg = mesg[2:]
-        msg = clientIP + ':' + clientPort + '/~' + user_name + ' ' + mesg + ' ' + time
+        msg = clientIP + ':' + clientPort + '/~' + user_name + ': ' + mesg + ' ' + time
         print(msg)
 
 
