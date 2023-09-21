@@ -6,7 +6,7 @@ import RDTs
 import threading
 
 
-def connectclient(serverSocket: socket, serverAddr: tuple[str, int], buffer_size: int, first: bool = True, set_addr: None | str = None) -> RDT:
+def initserver(serverSocket: socket, serverAddr: tuple[str, int], buffer_size: int, first: bool = True, set_addr: None | str = None) -> RDT:
     print('initializing server')
     objRDT = RDT(serverSocket, set_addr)
     # mesg = objRDT.receivemsg(buffer_size)

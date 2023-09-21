@@ -33,7 +33,6 @@ buff = [Queue()]
 
 
 def listenloop(type=False, first_con=None):
-    # # print('starting listen loop')
     # O canal vai ouvir a conexão do socket e retornar 2 casos
     # 1) Criar nova conexão
     # 2) Retornar para a conexão certa
@@ -43,12 +42,10 @@ def listenloop(type=False, first_con=None):
         with lock_sock_recv:
             pkt = sock.recvfrom(buffsize)
             pkt = (pkt[0].decode("utf-8"), pkt[1])
-            # print(f"checking1 {pkt}")
 
         with lock_list:
             # Alternativamente, irá criar uma nova conexão, e então comunicar
             if not pkt[1] in addresslist and not type:  # Se for um endereço novo
-                # print("Add new RDT")
                 addresslist.append(pkt[1])
 
                 arg = (pkt[1][0], pkt[1][1], pkt[1])
@@ -61,22 +58,26 @@ def listenloop(type=False, first_con=None):
 
 
 def startloop(serverAddr0, serverAddr1, clientAddr=None):  # LOOP PRINCIPAL DE RECEBER MENSAGENS
-    # # print('starting loop')
-    serverAddr = (serverAddr0, serverAddr1)
-    mymodule = importlib.import_module('server1')
-    connectclient = getattr(mymodule, 'connectclient')
-    if (clientAddr == None):
-        # # print(f"looping first")
-        conexaoRDT: RDT = connectclient(sock, serverAddr, buffsize)
-    else:
-        # # print(f"looping with {clientAddr}")
-        conexaoRDT = connectclient(sock, serverAddr, buffsize, False, clientAddr)
+    # Isso inicia a thread do RDT, ou seja, a conexão do servidor com um cliente
+    # Essa conexão é baseada no ip e na porta
 
-    # print('ohio')
+    serverAddr = (serverAddr0, serverAddr1)
+
+    # Chama a função initserver para inicializar o servidor
+    mymodule = importlib.import_module('server1')
+    initserver = getattr(mymodule, 'initserver')
+    if (clientAddr == None):
+        conexaoRDT: RDT = initserver(sock, serverAddr, buffsize)
+    else:
+        conexaoRDT = initserver(sock, serverAddr, buffsize, False, clientAddr)
+
+    # Se conecta ao cliente
     mesg, clientAddr = conexaoRDT.receivemsg(buffsize)
     user_name = mesg[18:]
     print(f"{user_name} entrou na Sala")
-    while (True):
+
+    # Loop de receber mensagens
+    while True:
         mesg, clientAddr = conexaoRDT.receivemsg(buffsize)
         time = datetime.now()
         time = time.strftime(' %H:%M %d/%m/%Y')
@@ -99,9 +100,7 @@ class RDT():
     # Isso vai distribuir as mensagens para os RDTs
 
     def recvfrom(self, is_ack: bool, retAddress0, retAddress1, timeout=9999999) -> tuple[str, Any]:
-        # O que eu preciso fazer aqui é
-        # Esperar receber uma mensagem correta e então retorna-la para a função correspondente
-        # No caso de uma nova conexão, realizar o spawn e, ao chamar essa função, retornar a mensagem
+        # Espera receber uma mensagem correta e então retorna-la para a função correspondente
 
         if retAddress0 == None:
             retAddress = None
@@ -109,16 +108,16 @@ class RDT():
             retAddress = (retAddress0, retAddress1)
         ack_comp = 1 if is_ack else 0
         while True:
+            # Verifica os pacotes do buffer
             pkt = self.buffer.get(timeout=timeout)
-            # print(f'checking2 {pkt} from {retAddress1}')
-            if pkt[0][1] == str(ack_comp) and (pkt[1] == retAddress or retAddress == None):  # Verificar se é do tipo e endereço desejado
+            # Verificar se é do tipo e endereço desejado
+            if pkt[0][1] == str(ack_comp) and (pkt[1] == retAddress or retAddress == None):
                 return pkt
 
     def __init__(self, clientSocket: socket, retAddr=None):
         sock = clientSocket
         self.estado = RDT_Estados.Chamada_0
         self.estado_dest = RDT_Dest.Baixo_0
-        # print(f"started RDT with addr {retAddr}")
         self.retAddress = retAddr
         self.buffer = Queue()
         self.buff_index = buff.__len__()
@@ -138,7 +137,6 @@ class RDT():
         while self.estado == RDT_Estados.Ack_0 or self.estado == RDT_Estados.Ack_1:
             try:
                 # Tentar receber a mensagem
-                # print(f"Ack from {self.retAddress} {type(self.retAddress)}")
                 data, retAdress = self.recvfrom(True, self.retAddress[0], self.retAddress[1], 2)
 
                 # Verificação se o ACK corresponde à última msg enviada
@@ -155,58 +153,56 @@ class RDT():
                     continue  # Ack incorreto
 
             except:
+                # Timeout da queue
                 with lock_sock_send:
                     sock.sendto(string.encode(), serverAddr)
                 return False
 
     def sendmsg(self, string: str, serverAddr: tuple[str, int], buffer_size: int):
+        # Envia a mensagem
+
         if self.estado == RDT_Estados.Ack_0 or self.estado == RDT_Estados.Ack_1:
             raise Exception("ERRO: Enviou mensagem antes de receber ack")
+
         with lock_sock_send:
-            # print("enviando")
             if (self.retAddress == None):
                 self.retAddress = serverAddr
             sock.sendto(string.encode(), serverAddr)
             self.last_msg = string
 
+        # Muda para o estado de Ack correspondente
         if self.estado == RDT_Estados.Chamada_0:
             self.estado = RDT_Estados.Ack_0
         else:
             self.estado = RDT_Estados.Ack_1
 
     def receivemsg(self, buffer_size: int):
-        # print('barcelona')
         while True:
             # Tentar receber a mensagem
-            # print(f'Receiving from {self.retAddress}')
             if self.retAddress == None:
                 data, clientAdress = self.recvfrom(False, None, None)
             else:
                 data, clientAdress = self.recvfrom(False, self.retAddress[0], self.retAddress[1])
 
-            # print(f"Msg from {clientAdress}")
-
             if (self.retAddress == None):
-                # print(f"set dyn RDT with addr {clientAdress}")
                 self.retAddress = clientAdress
-
             if (self.retAddress != clientAdress):
                 print("TODO clientes diferentes.")
 
-                # Verificação se o sequence number é o próximo esperado
+            # Verificação se o sequence number é o próximo esperado
             seq_num = 0 if self.estado_dest == RDT_Dest.Baixo_0 else 1
-            # print(f"checking3 {data}")
-            if (data[0] == str(seq_num)):
+            if (data[0] == str(seq_num)):  # Se for
                 string = self.make_pkt("", seq_num, True)  # Criando pacote ACK
                 with lock_sock_send:
                     sock.sendto(string.encode(), clientAdress)
 
+                # Troca de estado
                 if self.estado_dest == RDT_Dest.Baixo_0:
                     self.estado_dest = RDT_Dest.Baixo_1
                 else:
                     self.estado_dest = RDT_Dest.Baixo_0
                 return data, clientAdress
-            else:
+            else:  # Se não for
                 string = self.make_pkt("", 0 if seq_num == 1 else 1)  # Reenviar ACK
                 with lock_sock_send:
                     sock.sendto(string.encode(), clientAdress)
