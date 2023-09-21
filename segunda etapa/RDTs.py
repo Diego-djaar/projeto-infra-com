@@ -6,6 +6,7 @@ import traceback
 import sys
 import importlib
 from queue import Queue
+from datetime import datetime
 # from server1 import connectclient
 
 
@@ -72,10 +73,18 @@ def startloop(serverAddr0, serverAddr1, clientAddr=None):  # LOOP PRINCIPAL DE R
         conexaoRDT = connectclient(sock, serverAddr, buffsize, False, clientAddr)
 
     # print('ohio')
-    mesg = conexaoRDT.receivemsg(buffsize)
+    mesg, clientAddr = conexaoRDT.receivemsg(buffsize)
+    user_name = mesg[19:]
     print(f"RECEIVED CONEXION {mesg[0]}")
     while (True):
         print(f"RECEIVED MESSAGE {(conexaoRDT.receivemsg(buffsize))[0]}")
+        time = datetime.now()
+        time = time.strftime(' %H:%M %d/%m/%Y')
+        clientIP, clientPort = clientAddr
+        clientPort = str(clientPort)
+        mesg = mesg[2:]
+        msg = clientIP + ':' + clientPort + '/~' + user_name + ' ' + mesg + ' ' + time
+        print(msg)
 
 
 class RDT():
