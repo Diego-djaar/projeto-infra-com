@@ -24,3 +24,7 @@ O nosso "protocolo" da camada de aplicação foi o seguinte:
 - a primeira mensagem enviada deve conter o nome do arquivo,
 - a segunda mensagem deve conter o número de pacotes que serão enviados com o conteúdo do arquivo,
 - por último, o arquivo é enviado pacote por pacote.
+
+## Parte 2
+
+A segunda parte do projeto se trata de uma implementação do protocolo rdt 3.0 da camada de transporte em uma aplicação de chat multiusuário gerenciado por um servidor e com a utilização do UDP.
