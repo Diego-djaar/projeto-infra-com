@@ -4,7 +4,7 @@ A segunda parte do projeto consiste em fazer um chat básico com transferência 
 
 O cliente é o programa client1.py e o servidor é o programa server1.py. Ambos utilizam as funções definidas em RDTs.py.
 
-O chat funciona para mais de um cliente simultâneamente. No entanto, as mensagens do chat público apenas são exibidas no terminal do servidor.
+O chat funciona para mais de um cliente simultâneamente.
 
 São implementadas as funcionalidade de Conectar à sala, Sair da sala e Exibir lista de usuários do chat.
 
@@ -19,6 +19,9 @@ São implementadas as funcionalidade de Conectar à sala, Sair da sala e Exibir 
 - Rebeca de Azevedo Menezes (ram3)
 
 ## Vídeo da apresentação
+
 https://clipchamp.com/watch/ktBBiJFK25v
 
 Rodar em Linux.
+
+Vídeo de demonstração: https://clipchamp.com/watch/ktBBiJFK25v
